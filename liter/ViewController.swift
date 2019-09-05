@@ -27,7 +27,8 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     }()
     
     let actionHandler = ActionHandlerScript()
-    let localBaseURL = "http://192.168.1.26:6927"
+    let fullPageBaseURL = "https://apps.wmflabs.org/en.wikipedia.org/v1/page/mobile-html/"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         webViewContainer.addConstrainedSubview(webView)
@@ -159,7 +160,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             }
         } else if isLoadingFull {
             isLoadingFull = false
-            let urlString = "\(localBaseURL)/en.wikipedia.org/v1/page/mobile-html/\(articleTitle)"
+            let urlString = "\(fullPageBaseURL)\(articleTitle)"
             guard let url = URL(string: urlString) else {
                 return
             }
