@@ -77,7 +77,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             webView.load(URLRequest(url: URL(string: shellPageURL)!))
             return
         }
-        loadArticleIntoShell()
+        loadArticleIntoShell(progressively: progressively)
     }
     
     @IBAction func shell(_ sender: Any) {
