@@ -106,6 +106,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         guard let action = body["action"] as? String else {
             return
         }
+        let data = body["data"] as? [String: Any]
         switch action {
         case "preloaded":
             onPreload()
@@ -113,9 +114,27 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             onSetup()
         case "postloaded":
             onPostLoad()
+        case "link_clicked":
+            guard let href = data?["href"] as? String else {
+                break
+            }
+            onLinkClicked(href: href)
         default:
             break
         }
+    }
+    
+    func onLinkClicked(href: String) {
+        guard let url = webView.url else {
+             return
+         }
+        guard href.hasPrefix("./") else {
+            return
+        }
+        let pathComponent = String(href.suffix(href.count - 2))
+        let newURL = url.deletingLastPathComponent().appendingPathComponent(pathComponent)
+        markLoadStart()
+        webView.load(URLRequest(url: newURL))
     }
     
     func onPreload() {
