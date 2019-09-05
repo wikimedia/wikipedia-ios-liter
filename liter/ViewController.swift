@@ -34,12 +34,17 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         URLCache.shared.diskCapacity = 4000000000 // 4 GB
         URLCache.shared.memoryCapacity = 1000000000 // 1 GB
         URLCache.shared.removeAllCachedResponses()
+        let websiteDataTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
+        webViewConfiguration.websiteDataStore.removeData(ofTypes: websiteDataTypes, modifiedSince: Date.distantPast) {
+            
+        }
     }
 
     lazy var shellPagePath = "mobile-html-shell"
     lazy var shellPageURL = "https://talk-pages.wmflabs.org/en.wikipedia.org/v1/page/\(shellPagePath)"
     
     var isLoadingShell = false
+    var isLoadingFull = false
     var isLoadingShellProgressively = false
     
     var articleTitle: String {
@@ -84,14 +89,10 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     }
     
     @IBAction func full(_ sender: Any) {
-        let urlString = "\(localBaseURL)/en.wikipedia.org/v1/page/mobile-html/\(articleTitle)"
-        guard let url = URL(string: urlString) else {
-            return
-        }
-        let request = URLRequest(url: url)
-        webView.isHidden = true
-        markLoadStart()
-        webView.load(request)
+        // trick webView into using the cache by loading a different URL first
+        // loading the same URL twice forces it to ignore the cache
+        isLoadingFull = true
+        webView.load(URLRequest(url: URL(string: "about:blank")!))
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -151,12 +152,21 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard isLoadingShell else {
-            return
-        }
-        webView.evaluateJavaScript("pagelib.c1.Page.setup(\(actionHandler.setupParams))") { (_, _) in
-            self.isLoadingShell = false
-            self.loadArticleIntoShell(progressively: self.isLoadingShellProgressively)
+        if isLoadingShell {
+            isLoadingShell = false
+            webView.evaluateJavaScript("pagelib.c1.Page.setup(\(actionHandler.setupParams))") { (_, _) in
+                self.loadArticleIntoShell(progressively: self.isLoadingShellProgressively)
+            }
+        } else if isLoadingFull {
+            isLoadingFull = false
+            let urlString = "\(localBaseURL)/en.wikipedia.org/v1/page/mobile-html/\(articleTitle)"
+            guard let url = URL(string: urlString) else {
+                return
+            }
+            let request = URLRequest(url: url)
+            webView.isHidden = true
+            markLoadStart()
+            webView.load(request)
         }
     }
         
