@@ -1,11 +1,3 @@
-//
-//  SceneDelegate.swift
-//  liter
-//
-//  Created by WMF on 9/5/19.
-//  Copyright © 2019 WMF. All rights reserved.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
