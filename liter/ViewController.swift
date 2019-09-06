@@ -36,7 +36,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         }
     }
     
-    var loadedTitles: [LoadMode: Set<String>] = [:]
+    var loadedTitles: [LoadType: Set<String>] = [:]
 
     @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var titleField: UITextField!
@@ -230,7 +230,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         guard let start = loadStart, let end = loadEnd else {
             return
         }
-        var titles = loadedTitles[loadMode, default: Set<String>()]
+        var titles = loadedTitles[loadType, default: Set<String>()]
         
         let cached: String
         if titles.contains(articleTitle) {
@@ -238,7 +238,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         } else {
             cached = "uncached"
             titles.insert(articleTitle)
-            loadedTitles[loadMode] = titles
+            loadedTitles[loadType] = titles
         }
         
         timeLabel.text = "\(timeFormatter.string(from: NSNumber(floatLiteral: 1000 * (end - start))) ?? "") \(cached)"
