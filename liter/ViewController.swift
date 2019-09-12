@@ -36,7 +36,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         }
     }
     
-    var loadedTitles: [LoadType: Set<String>] = [:]
+    var loadedURLs: Set<URL> = []
 
     @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var titleField: UITextField!
@@ -61,7 +61,16 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     }()
     
     let actionHandler = ActionHandlerScript()
-    let fullPageBaseURL = "https://apps.wmflabs.org/en.wikipedia.org/v1/page/mobile-html/"
+    let fullPageBaseURL = "https://en.wikipedia.org/api/rest_v1/page/mobile-html/"
+    
+    lazy var shellPagePath = "mobile-html-shell"
+    lazy var shellPageURL = "https://talk-pages.wmflabs.org/en.wikipedia.org/v1/page/\(shellPagePath)"
+    let shellLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_load_complete'}) }"
+    
+    var articleTitle: String = "United_States"
+    var articleURL: URL?  {
+        return URL(string: "\(fullPageBaseURL)\(articleTitle)")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -77,20 +86,13 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         webViewContainer.backgroundColor = UIColor.thermosphere
     }
 
-    lazy var shellPagePath = "mobile-html-shell"
-    lazy var shellPageURL = "https://talk-pages.wmflabs.org/en.wikipedia.org/v1/page/\(shellPagePath)"
-    
-    var articleTitle: String = "United_States"
-    
-    let shellLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_load_complete'}) }"
-
-    func loadArticleIntoShell(with title: String) {
+    func loadArticleIntoShell(with url: URL) {
         loadState = .loadingIntoShell
         let js: String
         if loadMode == .progressive {
-            js = "pagelib.c1.Page.loadProgressively('https://en.wikipedia.org/api/rest_v1/page/mobile-html/\(title)', 100, \(shellLoadCompletion))"
+            js = "pagelib.c1.Page.loadProgressively('\(url.absoluteString)', 100, \(shellLoadCompletion))"
         } else {
-            js = "pagelib.c1.Page.load('https://en.wikipedia.org/api/rest_v1/page/mobile-html/\(title)').then(() => { window.requestAnimationFrame(\(shellLoadCompletion)) })"
+            js = "pagelib.c1.Page.load('\(url.absoluteString)').then(() => { window.requestAnimationFrame(\(shellLoadCompletion)) })"
         }
         markLoadStart()
         webView.evaluateJavaScript(js) { (_, error) in
@@ -109,7 +111,10 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             return
         }
         loadState = .loadingIntoShell
-        loadArticleIntoShell(with: articleTitle)
+        guard let url = articleURL else {
+            return
+        }
+        loadArticleIntoShell(with: url)
     }
     
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
@@ -171,21 +176,20 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     }
     
     func onLinkClicked(href: String) {
-        guard let url = webView.url else {
-             return
-         }
         guard href.hasPrefix("./") else {
             return
         }
         let title = String(href.suffix(href.count - 2))
         articleTitle = title
+        guard let articleURL = articleURL else {
+            return
+        }
         switch loadType {
         case .shell:
-            loadArticleIntoShell(with: title)
+            loadArticleIntoShell(with: articleURL)
         default:
-            let newURL = url.deletingLastPathComponent().appendingPathComponent(title)
             markLoadStart()
-            webView.load(URLRequest(url: newURL))
+            webView.load(URLRequest(url: articleURL))
         }
     }
     
@@ -205,7 +209,10 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             markLoadEnd()
             return
         }
-        loadArticleIntoShell(with: articleTitle)
+        guard let articleURL = articleURL else {
+            return
+        }
+        loadArticleIntoShell(with: articleURL)
     }
     
     func onPostLoad() {
@@ -230,17 +237,16 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         guard let start = loadStart, let end = loadEnd else {
             return
         }
-        var titles = loadedTitles[loadType, default: Set<String>()]
-        
+        guard let articleURL = articleURL else {
+            return
+        }
         let cached: String
-        if titles.contains(articleTitle) {
+        if loadedURLs.contains(articleURL) {
             cached = "cached"
         } else {
             cached = "uncached"
-            titles.insert(articleTitle)
-            loadedTitles[loadType] = titles
+            loadedURLs.insert(articleURL)
         }
-        
         timeLabel.text = "\(timeFormatter.string(from: NSNumber(floatLiteral: 1000 * (end - start))) ?? "") \(cached)"
     }
     
@@ -258,11 +264,10 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             
         } else if loadType == .standard && loadState == .loading {
             loadState = .loaded
-            let urlString = "\(fullPageBaseURL)\(articleTitle)"
-            guard let url = URL(string: urlString) else {
+            guard let articleURL = articleURL else {
                 return
             }
-            let request = URLRequest(url: url)
+            let request = URLRequest(url: articleURL)
             webView.isHidden = true
             markLoadStart()
             webView.load(request)
