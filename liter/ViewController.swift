@@ -65,8 +65,11 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     
     lazy var shellPagePath = "mobile-html-shell"
     lazy var shellPageURL = "https://talk-pages.wmflabs.org/en.wikipedia.org/v1/page/\(shellPagePath)"
-    let shellLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_load_complete'}) }"
+    let shellProgressiveFirstLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_inital_load_complete'}) }"
+    let shellProgressiveFullLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_full_load_complete'}) }"
     
+    let shellFullLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_load_complete'}) }"
+
     var articleTitle: String = "United_States"
     var articleURL: URL?  {
         return URL(string: "\(fullPageBaseURL)\(articleTitle)")
@@ -90,9 +93,9 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         loadState = .loadingIntoShell
         let js: String
         if loadMode == .progressive {
-            js = "pagelib.c1.Page.loadProgressively('\(url.absoluteString)', 100, \(shellLoadCompletion))"
+            js = "pagelib.c1.Page.loadProgressively('\(url.absoluteString)', 100, \(shellProgressiveFirstLoadCompletion), \(shellProgressiveFullLoadCompletion))"
         } else {
-            js = "pagelib.c1.Page.load('\(url.absoluteString)').then(() => { window.requestAnimationFrame(\(shellLoadCompletion)) })"
+            js = "pagelib.c1.Page.load('\(url.absoluteString)').then(() => { window.requestAnimationFrame(\(shellFullLoadCompletion)) })"
         }
         markLoadStart()
         webView.evaluateJavaScript(js) { (_, error) in
@@ -166,10 +169,17 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
                 break
             }
             onLinkClicked(href: href)
+        case "shell_inital_load_complete":
+            markLoadEnd()
+            webView.isHidden = false
+        case "shell_full_load_complete":
+            loadState = .setup
+            webView.evaluateJavaScript("pagelib.c1.Page.setup(\(self.actionHandler.setupParams))")
         case "shell_load_complete":
             markLoadEnd()
             webView.isHidden = false
             loadState = .setup
+            webView.evaluateJavaScript("pagelib.c1.Page.setup(\(self.actionHandler.setupParams))")
         default:
             break
         }
