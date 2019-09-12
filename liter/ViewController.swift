@@ -36,7 +36,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         }
     }
     
-    var loadedURLs: Set<URL> = []
+    var loadedURLs: [LoadType: Set<URL>] = [:]
 
     @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var titleField: UITextField!
@@ -240,12 +240,14 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         guard let articleURL = articleURL else {
             return
         }
+        var urls = loadedURLs[loadType, default: Set<URL>()]
         let cached: String
-        if loadedURLs.contains(articleURL) {
+        if urls.contains(articleURL) {
             cached = "cached"
         } else {
             cached = "uncached"
-            loadedURLs.insert(articleURL)
+            urls.insert(articleURL)
+            loadedURLs[loadType] = urls
         }
         timeLabel.text = "\(timeFormatter.string(from: NSNumber(floatLiteral: 1000 * (end - start))) ?? "") \(cached)"
     }
