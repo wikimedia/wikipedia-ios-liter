@@ -162,7 +162,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             onPreload()
         case "setup":
             onSetup()
-        case "postloaded":
+        case "final_setup":
             onPostLoad()
         case "link_clicked":
             guard let href = data?["href"] as? String else {
