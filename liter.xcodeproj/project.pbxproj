@@ -35,8 +35,6 @@
 		83AA0AFE232122390022AFFD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		83AA0B04232124030022AFFD /* ActionHandlerScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionHandlerScript.swift; sourceTree = "<group>"; };
 		83AA0B062321275D0022AFFD /* UIView+ConstrainedSubview.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+ConstrainedSubview.swift"; sourceTree = "<group>"; };
-		83F688D32350DBA8003290E5 /* literTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = literTests.swift; sourceTree = "<group>"; };
-		83F688D52350DBA8003290E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		83F688EF2350EF43003290E5 /* SchemeHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SchemeHandler.swift; sourceTree = "<group>"; };
 		83F688F12350F05B003290E5 /* Session.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		83F688F32350F35F003290E5 /* Cache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
@@ -59,7 +57,6 @@
 			isa = PBXGroup;
 			children = (
 				83AA0AEF232122380022AFFD /* liter */,
-				83F688D22350DBA8003290E5 /* literTests */,
 				83AA0AEE232122380022AFFD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -92,15 +89,6 @@
 				83F688F92350FAA2003290E5 /* AsyncOperation.swift */,
 			);
 			path = liter;
-			sourceTree = "<group>";
-		};
-		83F688D22350DBA8003290E5 /* literTests */ = {
-			isa = PBXGroup;
-			children = (
-				83F688D32350DBA8003290E5 /* literTests.swift */,
-				83F688D52350DBA8003290E5 /* Info.plist */,
-			);
-			path = literTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
