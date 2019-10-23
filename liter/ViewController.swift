@@ -1,8 +1,40 @@
 import UIKit
 import WebKit
 
+enum AppError: Error {
+    case generic
+}
 
-class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
+class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
+    var articleLoadCompletion: ((Result<TimeInterval, AppError>) -> Void)? = nil
+    public func load(with title: String, completion: @escaping (Result<TimeInterval, AppError>) -> Void) {
+        articleTitle = title
+        guard let articleURL = articleURL else {
+            completion(.failure(.generic))
+            return
+        }
+        articleLoadCompletion = completion
+        loadType = .standard
+        loadMode = .progressive
+        loadState = .loaded
+        let request = URLRequest(url: articleURL)
+        webView.isHidden = true
+        markLoadStart()
+        webView.load(request)
+    }
+    
+    public func loadFile(with url: URL, title: String, completion: @escaping (Result<TimeInterval, AppError>) -> Void) {
+        articleTitle = title
+        articleLoadCompletion = completion
+        loadType = .standard
+        loadMode = .progressive
+        loadState = .loaded
+        let request = URLRequest(url: url)
+        webView.isHidden = true
+        markLoadStart()
+        webView.load(request)
+    }
+    
     enum LoadType {
         case standard
         case shell
@@ -42,6 +74,16 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     @IBOutlet weak var titleField: UITextField!
     @IBOutlet weak var webViewContainer: UIView!
     
+    lazy var session: Session = {
+        assert(Thread.isMainThread)
+        return Session()
+    }()
+    
+    lazy var schemeHandler: SchemeHandler = {
+        assert(Thread.isMainThread)
+        return SchemeHandler(scheme: "app", session: session)
+    }()
+    
     lazy var webViewConfiguration: WKWebViewConfiguration = {
         let contentController = WKUserContentController()
         let actionHandler = ActionHandlerScript()
@@ -49,6 +91,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         contentController.add(self, name: actionHandler.messageHandlerName)
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = WKWebsiteDataStore.default()
+        configuration.setURLSchemeHandler(schemeHandler, forURLScheme: schemeHandler.scheme)
         configuration.userContentController = contentController
         return configuration
     }()
@@ -57,6 +100,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         let webView = WKWebView(frame: .zero, configuration: webViewConfiguration)
         webView.isHidden = true
         webView.navigationDelegate = self
+        webView.uiDelegate = self;
         return webView
     }()
     
@@ -137,13 +181,9 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
     }
     
     @IBAction func standardProgressive(_ sender: Any) {
-        // trick webView into using the cache by loading a different URL first
-        // loading the same URL twice forces it to ignore the cache
-        articleTitle = titleField.text!
-        loadType = .standard
-        loadMode = .progressive
-        loadState = .loading
-        webView.load(URLRequest(url: URL(string: "about:blank")!))
+        load(with: titleField.text!) { (_) in
+            
+        }
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -250,6 +290,9 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         guard let articleURL = articleURL else {
             return
         }
+        let duration: TimeInterval =  1000 * (end - start)
+        articleLoadCompletion?(.success(duration))
+        articleLoadCompletion = nil
         let cached: String
         if loadedURLs.contains(articleURL) {
             cached = "cached"
@@ -257,7 +300,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
             cached = "uncached"
             loadedURLs.insert(articleURL)
         }
-        timeLabel.text = "\(timeFormatter.string(from: NSNumber(floatLiteral: 1000 * (end - start))) ?? "") \(cached)"
+        timeLabel.text = "\(timeFormatter.string(from: NSNumber(floatLiteral: duration)) ?? "") \(cached)"
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -271,17 +314,16 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
                 webView.evaluateJavaScript("pagelib.c1.Page.setup(\(self.actionHandler.setupParams), () => { window.webkit.messageHandlers.\(self.actionHandler.messageHandlerName).postMessage({action: 'setup'}) }) ") { (_, _) in
                 }
             }
-            
-        } else if loadType == .standard && loadState == .loading {
-            loadState = .loaded
-            guard let articleURL = articleURL else {
-                return
-            }
-            let request = URLRequest(url: articleURL)
-            webView.isHidden = true
-            markLoadStart()
-            webView.load(request)
         }
+    }
+    
+    func webView(_ webView: WKWebView, contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo, completionHandler: @escaping (UIContextMenuConfiguration?) -> Void) {
+        let config = UIContextMenuConfiguration(identifier: nil, previewProvider: { () -> UIViewController? in
+            return UIStoryboard(name: "Main", bundle: nil).instantiateViewController(identifier: "vc")
+        }) { (elements) -> UIMenu? in
+            return nil
+        }
+        completionHandler(config)
     }
         
 }
