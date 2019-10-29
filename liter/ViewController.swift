@@ -59,7 +59,7 @@ class ViewController: UIViewController, UIScrollViewDelegate {
             self.titleField.text = picked
             self.load(with: picked) { (_) in
                 
-            }            
+            }
         }
         present(pickerVC, animated: true)
         
@@ -127,6 +127,8 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet var controls: [UIControl]!
     
     @IBAction func standardProgressive(_ sender: Any) {
+        titleField.endEditing(true)
+        languageField.endEditing(true)
         load(with: titleField.text!) { (_) in
             
         }

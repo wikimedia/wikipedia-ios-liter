@@ -36,6 +36,7 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
         let webView = WKWebView(frame: .zero, configuration: webViewConfiguration)
         webView.navigationDelegate = self
         webView.uiDelegate = self
+        webView.scrollView.keyboardDismissMode = .onDrag
         return webView
     }()
     
