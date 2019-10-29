@@ -24,31 +24,36 @@
                                             <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="T6a-cf-sbr">
                                                 <rect key="frame" x="8" y="8" width="398" height="34"/>
                                                 <subviews>
-                                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="249" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="United_States" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hMu-3T-zOD">
-                                                        <rect key="frame" x="0.0" y="0.0" width="252" height="34"/>
+                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="en" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="q9v-KQ-ZMq">
+                                                        <rect key="frame" x="0.0" y="0.0" width="44" height="34"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                        <textInputTraits key="textInputTraits"/>
+                                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" smartDashesType="no" smartInsertDeleteType="no" smartQuotesType="no"/>
                                                     </textField>
+                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="sGb-hU-cS7">
+                                                        <rect key="frame" x="52" y="0.0" width="30" height="34"/>
+                                                        <state key="normal" title="▼"/>
+                                                        <connections>
+                                                            <action selector="showLanguageList:" destination="BYZ-38-t0r" eventType="touchUpInside" id="BPt-6m-L7Q"/>
+                                                        </connections>
+                                                    </button>
+                                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="249" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="United_States" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hMu-3T-zOD">
+                                                        <rect key="frame" x="90" y="0.0" width="200" height="34"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" smartDashesType="no" smartInsertDeleteType="no" smartQuotesType="no"/>
+                                                    </textField>
+                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="y7s-0v-hQV">
+                                                        <rect key="frame" x="298" y="0.0" width="30" height="34"/>
+                                                        <state key="normal" title="▼"/>
+                                                        <connections>
+                                                            <action selector="showPageList:" destination="BYZ-38-t0r" eventType="touchUpInside" id="DFh-i5-0QT"/>
+                                                        </connections>
+                                                    </button>
                                                     <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="XZ0-ce-KiY">
-                                                        <rect key="frame" x="260" y="0.0" width="20" height="34"/>
+                                                        <rect key="frame" x="336" y="0.0" width="20" height="34"/>
                                                     </activityIndicatorView>
-                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QX7-ec-3ek">
-                                                        <rect key="frame" x="288" y="0.0" width="34" height="34"/>
-                                                        <state key="normal" title="Shell"/>
-                                                        <connections>
-                                                            <action selector="shellFull:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Z3t-8a-hWe"/>
-                                                        </connections>
-                                                    </button>
-                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="M1O-8s-TtX">
-                                                        <rect key="frame" x="330" y="0.0" width="30" height="34"/>
-                                                        <state key="normal" title="First"/>
-                                                        <connections>
-                                                            <action selector="shellFirst:" destination="BYZ-38-t0r" eventType="touchUpInside" id="CF5-hP-epd"/>
-                                                        </connections>
-                                                    </button>
                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="gM0-8S-Y8T">
-                                                        <rect key="frame" x="368" y="0.0" width="30" height="34"/>
-                                                        <state key="normal" title="Full"/>
+                                                        <rect key="frame" x="364" y="0.0" width="34" height="34"/>
+                                                        <state key="normal" title="Load"/>
                                                         <connections>
                                                             <action selector="standardProgressive:" destination="BYZ-38-t0r" eventType="touchUpInside" id="217-Nf-k2K"/>
                                                         </connections>
@@ -82,10 +87,19 @@
                                             <constraint firstItem="i41-lg-kJG" firstAttribute="top" secondItem="Cx0-un-ttp" secondAttribute="topMargin" id="Yh2-2E-ZMb"/>
                                         </constraints>
                                     </view>
-                                    <view contentMode="scaleToFill" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="OHx-jr-ShB">
+                                    <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="ZX1-ZI-5c5">
                                         <rect key="frame" x="0.0" y="100" width="414" height="718"/>
-                                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
-                                    </view>
+                                        <subviews>
+                                            <view contentMode="scaleToFill" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="OHx-jr-ShB">
+                                                <rect key="frame" x="0.0" y="0.0" width="207" height="718"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                            </view>
+                                            <view contentMode="scaleToFill" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="f5t-as-Uu7">
+                                                <rect key="frame" x="207" y="0.0" width="207" height="718"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                            </view>
+                                        </subviews>
+                                    </stackView>
                                 </subviews>
                             </stackView>
                         </subviews>
@@ -100,12 +114,12 @@
                     </view>
                     <connections>
                         <outlet property="activityIndicator" destination="XZ0-ce-KiY" id="Dn5-hL-f61"/>
+                        <outlet property="languageField" destination="q9v-KQ-ZMq" id="KyH-bd-qtX"/>
+                        <outlet property="secondWebViewContainer" destination="f5t-as-Uu7" id="8Ll-6g-60P"/>
                         <outlet property="timeLabel" destination="i41-lg-kJG" id="tUd-nG-fiV"/>
                         <outlet property="titleField" destination="hMu-3T-zOD" id="CWo-c1-O2I"/>
                         <outlet property="webViewContainer" destination="OHx-jr-ShB" id="6cN-zM-1BT"/>
                         <outletCollection property="controls" destination="hMu-3T-zOD" collectionClass="NSMutableArray" id="uET-zu-aaJ"/>
-                        <outletCollection property="controls" destination="QX7-ec-3ek" collectionClass="NSMutableArray" id="pWs-eA-Sge"/>
-                        <outletCollection property="controls" destination="M1O-8s-TtX" collectionClass="NSMutableArray" id="LKS-fm-S6Q"/>
                         <outletCollection property="controls" destination="gM0-8S-Y8T" collectionClass="NSMutableArray" id="H9y-CD-JQa"/>
                     </connections>
                 </viewController>
