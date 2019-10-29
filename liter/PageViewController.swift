@@ -3,6 +3,7 @@ import WebKit
 
 class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
     private var loadCompletion: ((Result<TimeInterval, AppError>) -> Void)? = nil
+    let messageHandlerName = "action"
     
     public func load(with url: URL, completion: @escaping (Result<TimeInterval, AppError>) -> Void) {
         loadCompletion = completion
@@ -20,12 +21,17 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
         return SchemeHandler(scheme: "app", session: session)
     }()
     
+    private func updateHandler() {
+        let contentController = webView.configuration.userContentController
+        let actionHandler = ActionHandlerScript(theme: theme, messageHandlerName: messageHandlerName)
+        contentController.removeAllUserScripts()
+        contentController.addUserScript(actionHandler)
+    }
+    
     lazy var webViewConfiguration: WKWebViewConfiguration = {
         let contentController = WKUserContentController()
-        let actionHandler = ActionHandlerScript()
-        contentController.addUserScript(actionHandler)
-        contentController.add(self, name: actionHandler.messageHandlerName)
         let configuration = WKWebViewConfiguration()
+        contentController.add(self, name: messageHandlerName)
         configuration.websiteDataStore = WKWebsiteDataStore.default()
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: schemeHandler.scheme)
         configuration.userContentController = contentController
@@ -40,6 +46,21 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
         return webView
     }()
     
+    var _theme: String = "dark"
+    var theme: String {
+        set {
+            if theme == "light" {
+                _theme = "default"
+            } else {
+                _theme = newValue
+            }
+            webView.evaluateJavaScript("pagelib.c1.Page.setTheme(pagelib.c1.Themes.\(_theme.uppercased()))")
+            updateHandler()
+        }
+        get {
+            return _theme
+        }
+    }
     override func loadView() {
         view = webView
         webView.backgroundColor = UIColor.thermosphere
@@ -48,14 +69,10 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
             
         }
         webView.backgroundColor = UIColor.thermosphere
+        updateHandler()
     }
     
-    let actionHandler = ActionHandlerScript()
-    
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == actionHandler.messageHandlerName else {
-            return
-        }
         guard let body = message.body as? [String: Any] else {
             return
         }

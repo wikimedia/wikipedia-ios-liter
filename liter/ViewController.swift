@@ -9,6 +9,21 @@ extension CharacterSet {
 }
 class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet weak var languageField: UITextField!
+    @IBOutlet weak var themeLabel: UILabel!
+    @IBAction func showThemeList(_ sender: Any) {
+        let pickerVC = PickerViewController(options: ["light", "dark", "sepia", "black"]) { [unowned self] (picked) in
+            defer {
+                self.dismiss(animated: true)
+            }
+            guard let picked = picked else {
+                return
+            }
+            self.themeLabel.text = String(picked.prefix(1))
+            self.pageViewControllerA.theme = picked
+            self.pageViewControllerB.theme = picked
+        }
+        present(pickerVC, animated: true)
+    }
     
     lazy var languages: [String] = {
         return ["hi", "he", "fa", "ru", "pl", "vi", "sv", "nl", "de", "en", "es", "fr", "it", "ja", "pt", "zh"].sorted()
