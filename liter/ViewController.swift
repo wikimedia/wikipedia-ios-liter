@@ -7,7 +7,7 @@ extension CharacterSet {
         return allowed
     }()
 }
-class ViewController: UIViewController, UIScrollViewDelegate {
+class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegate {
     @IBOutlet weak var languageField: UITextField!
     @IBOutlet weak var themeLabel: UILabel!
     @IBAction func showThemeList(_ sender: Any) {
@@ -108,6 +108,10 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet weak var titleField: UITextField!
     @IBOutlet weak var webViewContainer: UIView!
     @IBOutlet weak var secondWebViewContainer: UIView!
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    
+    @IBOutlet var controls: [UIControl]!
+    @IBOutlet var textFields: [UITextField]!
     
     var articleTitle: String = "United_States"
     
@@ -135,11 +139,14 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         URLCache.shared.memoryCapacity = 1000000000 // 1 GB
         URLCache.shared.removeAllCachedResponses()
         webViewContainer.backgroundColor = UIColor.thermosphere
+        
+        for field in textFields {
+            field.returnKeyType = .go
+            field.delegate = self
+        }
     }
     
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
-    
-    @IBOutlet var controls: [UIControl]!
+
     
     @IBAction func standardProgressive(_ sender: Any) {
         titleField.endEditing(true)
@@ -155,6 +162,14 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         } else {
             pageViewControllerA.webView.scrollView.contentOffset = scrollView.contentOffset
         }
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        guard string != "\n" else {
+            standardProgressive(self)
+            return false
+        }
+        return true
     }
 }
 

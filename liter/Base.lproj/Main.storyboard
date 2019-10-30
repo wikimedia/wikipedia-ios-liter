@@ -147,6 +147,12 @@
                         <outlet property="webViewContainer" destination="OHx-jr-ShB" id="6cN-zM-1BT"/>
                         <outletCollection property="controls" destination="hMu-3T-zOD" collectionClass="NSMutableArray" id="uET-zu-aaJ"/>
                         <outletCollection property="controls" destination="gM0-8S-Y8T" collectionClass="NSMutableArray" id="H9y-CD-JQa"/>
+                        <outletCollection property="textFields" destination="q9v-KQ-ZMq" collectionClass="NSMutableArray" id="qaj-pZ-lml"/>
+                        <outletCollection property="textFields" destination="hMu-3T-zOD" collectionClass="NSMutableArray" id="arw-0e-Qhy"/>
+                        <outletCollection property="controls" destination="q9v-KQ-ZMq" collectionClass="NSMutableArray" id="cS2-bd-D70"/>
+                        <outletCollection property="controls" destination="sGb-hU-cS7" collectionClass="NSMutableArray" id="o8Y-oK-GBj"/>
+                        <outletCollection property="controls" destination="y7s-0v-hQV" collectionClass="NSMutableArray" id="VSA-Ld-Tl3"/>
+                        <outletCollection property="controls" destination="Mhj-ZK-zY1" collectionClass="NSMutableArray" id="Sjb-2H-zZL"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
