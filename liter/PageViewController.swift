@@ -2,6 +2,8 @@ import UIKit
 import WebKit
 
 class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
+    var interfaceName = "pcs"
+    
     private var loadCompletion: ((Result<TimeInterval, AppError>) -> Void)? = nil
     let messageHandlerName = "action"
     
@@ -23,7 +25,7 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
     
     private func updateHandler() {
         let contentController = webView.configuration.userContentController
-        let actionHandler = ActionHandlerScript(theme: theme, messageHandlerName: messageHandlerName)
+        let actionHandler = ActionHandlerScript(theme: theme, messageHandlerName: messageHandlerName, interfaceName: interfaceName)
         contentController.removeAllUserScripts()
         contentController.addUserScript(actionHandler)
     }
@@ -54,7 +56,7 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
             } else {
                 _theme = newValue
             }
-            webView.evaluateJavaScript("pagelib.c1.Page.setTheme(pagelib.c1.Themes.\(_theme.uppercased()))")
+            webView.evaluateJavaScript("\(interfaceName).c1.Page.setTheme(\(interfaceName).c1.Themes.\(_theme.uppercased()))")
             updateHandler()
         }
         get {
@@ -63,12 +65,10 @@ class PageViewController: UIViewController, WKScriptMessageHandler, WKNavigation
     }
     override func loadView() {
         view = webView
-        webView.backgroundColor = UIColor.thermosphere
         let websiteDataTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
         webViewConfiguration.websiteDataStore.removeData(ofTypes: websiteDataTypes, modifiedSince: Date.distantPast) {
             
         }
-        webView.backgroundColor = UIColor.thermosphere
         updateHandler()
     }
     

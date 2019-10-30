@@ -119,7 +119,9 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
         return PageViewController()
     }()
     lazy var pageViewControllerB: PageViewController = {
-        return PageViewController()
+        let b = PageViewController()
+        b.interfaceName = "pagelib"
+        return b
     }()
     
     override func viewDidLoad() {
@@ -138,7 +140,6 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
         URLCache.shared.diskCapacity = 4000000000 // 4 GB
         URLCache.shared.memoryCapacity = 1000000000 // 1 GB
         URLCache.shared.removeAllCachedResponses()
-        webViewContainer.backgroundColor = UIColor.thermosphere
         
         for field in textFields {
             field.returnKeyType = .go
