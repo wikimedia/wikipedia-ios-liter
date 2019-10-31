@@ -26,7 +26,23 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
     }
     
     lazy var languages: [String] = {
-        return ["hi", "he", "fa", "ru", "pl", "vi", "sv", "nl", "de", "en", "es", "fr", "it", "ja", "pt", "zh"].sorted()
+        guard let folderURL = Bundle.main.url(forResource: "pages", withExtension: nil) else {
+            return []
+        }
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(at: folderURL, includingPropertiesForKeys: nil, options: [], errorHandler: { (url, error) -> Bool in  return true }) else {
+            return []
+        }
+        let languages = enumerator.compactMap({ (maybe) -> String? in
+            guard
+                let fileURL = maybe as? URL,
+                fileURL.pathExtension == "txt"
+            else {
+                return nil
+            }
+            return fileURL.deletingPathExtension().lastPathComponent
+        })
+        return languages.sorted()
     }()
     
     @IBAction func showLanguageList(_ sender: Any) {
@@ -48,35 +64,58 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
     }
     
     var pageLists: [String: [String]] = [:]
+    var pickers: [String: PickerViewController] = [:]
+    lazy var exclusions: Set<String> = {
+        guard
+            let listURL = Bundle.main.url(forResource: "exclusions", withExtension: "txt"),
+            let file = try? String(contentsOf: listURL)
+        else {
+            return []
+        }
+        return Set(file.split(separator: "\n").map { String($0) })
+    }()
     
     @IBAction func showPageList(_ sender: Any) {
-        var list = pageLists[language]
-        if (list == nil) {
-            guard let listURL = Bundle.main.url(forResource: language, withExtension: "txt") else {
+        var pickerVC = pickers[language]
+        if pickerVC == nil {
+            var list = pageLists[language]
+            if list == nil {
+                guard let listURL = Bundle.main.url(forResource: language, withExtension: "txt", subdirectory: "pages") else {
+                    return
+                }
+                guard let file = try? String(contentsOf: listURL) else {
+                    return
+                }
+                list = file.split(separator: "\n").compactMap {
+                    let string = String($0)
+                    guard !exclusions.contains(string) else {
+                        return nil
+                    }
+                    return string
+                }
+                pageLists[language] = list
+            }
+            guard let langList = list else {
                 return
             }
-            guard let file = try? String(contentsOf: listURL) else {
-                return
+            pickerVC = PickerViewController(options: langList) { [unowned self] (picked) in
+                defer {
+                    self.dismiss(animated: true)
+                }
+                guard let picked = picked else {
+                    return
+                }
+                self.titleField.text = picked
+                self.load(with: picked) { (_) in
+                    
+                }
             }
-            list = file.split(separator: "\n").map { String($0) }
-            pageLists[language] = list
+            pickers[language] = pickerVC
         }
-        guard let langList = list else {
+        guard let picker = pickerVC else {
             return
         }
-        let pickerVC = PickerViewController(options: langList) { [unowned self] (picked) in
-            defer {
-                self.dismiss(animated: true)
-            }
-            guard let picked = picked else {
-                return
-            }
-            self.titleField.text = picked
-            self.load(with: picked) { (_) in
-                
-            }
-        }
-        present(pickerVC, animated: true)
+        present(picker, animated: true)
         
     }
 
@@ -86,7 +125,11 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
         guard let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: CharacterSet.pathComponentAllowed) else {
             return
         }
+        #if LOCAL
+        let a = "http://localhost:6927/"
+        #else
         let a = "https://apps.wmflabs.org/"
+        #endif
         let b = "https://apps2.wmflabs.org/"
         let basePath = "\(language).wikipedia.org/v1/page/mobile-html/"
         activityIndicator.startAnimating()
