@@ -1,330 +1,220 @@
 import UIKit
-import WebKit
 
-enum AppError: Error {
-    case generic
+extension CharacterSet {
+    static let pathComponentAllowed: CharacterSet = {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.remove(charactersIn: "/.")
+        return allowed
+    }()
 }
-
-class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
-    var articleLoadCompletion: ((Result<TimeInterval, AppError>) -> Void)? = nil
-    public func load(with title: String, completion: @escaping (Result<TimeInterval, AppError>) -> Void) {
-        articleTitle = title
-        guard let articleURL = articleURL else {
-            completion(.failure(.generic))
+class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegate {
+    @IBOutlet weak var languageField: UITextField!
+    @IBOutlet weak var themeLabel: UILabel!
+    @IBAction func showThemeList(_ sender: Any) {
+        let pickerVC = PickerViewController(options: ["light", "dark", "sepia", "black"]) { [unowned self] (picked) in
+            defer {
+                self.dismiss(animated: true)
+            }
+            guard let picked = picked else {
+                return
+            }
+            self.themeLabel.text = String(picked.prefix(1))
+            self.pageViewControllerA.theme = picked
+            self.pageViewControllerB.theme = picked
+        }
+        present(pickerVC, animated: true)
+    }
+    
+    lazy var languages: [String] = {
+        guard let folderURL = Bundle.main.url(forResource: "pages", withExtension: nil) else {
+            return []
+        }
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(at: folderURL, includingPropertiesForKeys: nil, options: [], errorHandler: { (url, error) -> Bool in  return true }) else {
+            return []
+        }
+        let languages = enumerator.compactMap({ (maybe) -> String? in
+            guard
+                let fileURL = maybe as? URL,
+                fileURL.pathExtension == "txt"
+            else {
+                return nil
+            }
+            return fileURL.deletingPathExtension().lastPathComponent
+        })
+        return languages.sorted()
+    }()
+    
+    @IBAction func showLanguageList(_ sender: Any) {
+        let pickerVC = PickerViewController(options: languages) { [unowned self] (picked) in
+            defer {
+                self.dismiss(animated: true)
+            }
+            guard let picked = picked else {
+                return
+            }
+            self.languageField.text = picked
+            self.titleField.text = ""
+        }
+        present(pickerVC, animated: true)
+    }
+    
+    var language: String {
+        return languageField.text ?? "en"
+    }
+    
+    var pageLists: [String: [String]] = [:]
+    var pickers: [String: PickerViewController] = [:]
+    lazy var exclusions: Set<String> = {
+        guard
+            let listURL = Bundle.main.url(forResource: "exclusions", withExtension: "txt"),
+            let file = try? String(contentsOf: listURL)
+        else {
+            return []
+        }
+        return Set(file.split(separator: "\n").map { String($0) })
+    }()
+    
+    @IBAction func showPageList(_ sender: Any) {
+        var pickerVC = pickers[language]
+        if pickerVC == nil {
+            var list = pageLists[language]
+            if list == nil {
+                guard let listURL = Bundle.main.url(forResource: language, withExtension: "txt", subdirectory: "pages") else {
+                    return
+                }
+                guard let file = try? String(contentsOf: listURL) else {
+                    return
+                }
+                list = file.split(separator: "\n").compactMap {
+                    let string = String($0)
+                    guard !exclusions.contains(string) else {
+                        return nil
+                    }
+                    return string
+                }
+                pageLists[language] = list
+            }
+            guard let langList = list else {
+                return
+            }
+            pickerVC = PickerViewController(options: langList) { [unowned self] (picked) in
+                defer {
+                    self.dismiss(animated: true)
+                }
+                guard let picked = picked else {
+                    return
+                }
+                self.titleField.text = picked
+                self.load(with: picked) { (_) in
+                    
+                }
+            }
+            pickers[language] = pickerVC
+        }
+        guard let picker = pickerVC else {
             return
         }
-        articleLoadCompletion = completion
-        loadType = .standard
-        loadMode = .progressive
-        loadState = .loaded
-        let request = URLRequest(url: articleURL)
-        webView.isHidden = true
-        markLoadStart()
-        webView.load(request)
+        present(picker, animated: true)
+        
     }
+
     
-    public func loadFile(with url: URL, title: String, completion: @escaping (Result<TimeInterval, AppError>) -> Void) {
-        articleTitle = title
-        articleLoadCompletion = completion
-        loadType = .standard
-        loadMode = .progressive
-        loadState = .loaded
-        let request = URLRequest(url: url)
-        webView.isHidden = true
-        markLoadStart()
-        webView.load(request)
-    }
-    
-    enum LoadType {
-        case standard
-        case shell
-    }
-    var loadType: LoadType = .shell
-    enum LoadMode {
-        case full
-        case progressive
-    }
-    var loadMode: LoadMode = .full
-    enum LoadState {
-        case none
-        case loading
-        case loadingShell
-        case loadingIntoShell
-        case loaded
-        case setup
-    }
-    var loadState: LoadState = .none {
-        didSet {
-            let loading = loadState != .none && loadState != .setup
-            if loading {
-                activityIndicator.startAnimating()
-            } else {
-                activityIndicator.stopAnimating()
-            }
-            titleField.isEnabled = !loading
-            for control in controls {
-                control.isEnabled = !loading
-            }
+    public func load(with title: String, completion: @escaping (Result<TimeInterval, AppError>) -> Void) {
+        let title = title.replacingOccurrences(of: " ", with: "_");
+        guard let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: CharacterSet.pathComponentAllowed) else {
+            return
+        }
+        #if LOCAL
+        let a = "http://localhost:8888/"
+        #else
+        let a = "https://mobileapps.wmflabs.org/"
+        #endif
+        let b = "https://apps2.wmflabs.org/"
+        let basePath = "\(language).wikipedia.org/v1/page/mobile-html/"
+        activityIndicator.startAnimating()
+        let loadGroup = DispatchGroup()
+        loadGroup.enter()
+        pageViewControllerA.load(with: URL(string: a + basePath + encodedTitle)!) { (result) in
+            loadGroup.leave()
+        }
+        loadGroup.enter()
+        pageViewControllerB.load(with: URL(string: b + basePath + encodedTitle)!) { (result) in
+            loadGroup.leave()
+        }
+        loadGroup.notify(queue: DispatchQueue.main) {
+            self.activityIndicator.stopAnimating()
         }
     }
     
-    var loadedURLs: Set<URL> = []
-
     @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var titleField: UITextField!
     @IBOutlet weak var webViewContainer: UIView!
-    
-    lazy var session: Session = {
-        assert(Thread.isMainThread)
-        return Session()
-    }()
-    
-    lazy var schemeHandler: SchemeHandler = {
-        assert(Thread.isMainThread)
-        return SchemeHandler(scheme: "app", session: session)
-    }()
-    
-    lazy var webViewConfiguration: WKWebViewConfiguration = {
-        let contentController = WKUserContentController()
-        let actionHandler = ActionHandlerScript()
-        contentController.addUserScript(actionHandler)
-        contentController.add(self, name: actionHandler.messageHandlerName)
-        let configuration = WKWebViewConfiguration()
-        configuration.websiteDataStore = WKWebsiteDataStore.default()
-        configuration.setURLSchemeHandler(schemeHandler, forURLScheme: schemeHandler.scheme)
-        configuration.userContentController = contentController
-        return configuration
-    }()
-    
-    lazy var webView: WKWebView = {
-        let webView = WKWebView(frame: .zero, configuration: webViewConfiguration)
-        webView.isHidden = true
-        webView.navigationDelegate = self
-        webView.uiDelegate = self;
-        return webView
-    }()
-    
-    let actionHandler = ActionHandlerScript()
-    let fullPageBaseURL = "https://en.wikipedia.org/api/rest_v1/page/mobile-html/"
-    
-    lazy var shellPagePath = "mobile-html-shell"
-    lazy var shellPageURL = "https://talk-pages.wmflabs.org/en.wikipedia.org/v1/page/\(shellPagePath)"
-    let shellProgressiveFirstLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_inital_load_complete'}) }"
-    let shellProgressiveFullLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_full_load_complete'}) }"
-    
-    let shellFullLoadCompletion = "() => { document.pcsActionHandler({action: 'shell_load_complete'}) }"
-
-    var articleTitle: String = "United_States"
-    var articleURL: URL?  {
-        return URL(string: "\(fullPageBaseURL)\(articleTitle)")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        webViewContainer.addConstrainedSubview(webView)
-        URLCache.shared.diskCapacity = 4000000000 // 4 GB
-        URLCache.shared.memoryCapacity = 1000000000 // 1 GB
-        URLCache.shared.removeAllCachedResponses()
-        let websiteDataTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
-        webViewConfiguration.websiteDataStore.removeData(ofTypes: websiteDataTypes, modifiedSince: Date.distantPast) {
-            
-        }
-        webView.backgroundColor = UIColor.thermosphere
-        webViewContainer.backgroundColor = UIColor.thermosphere
-    }
-
-    func loadArticleIntoShell(with url: URL) {
-        loadState = .loadingIntoShell
-        let js: String
-        if loadMode == .progressive {
-            js = "pagelib.c1.Page.loadProgressively('\(url.absoluteString)', 100, \(shellProgressiveFirstLoadCompletion), \(shellProgressiveFullLoadCompletion))"
-        } else {
-            js = "pagelib.c1.Page.load('\(url.absoluteString)').then(() => { window.requestAnimationFrame(\(shellFullLoadCompletion)) })"
-        }
-        markLoadStart()
-        webView.evaluateJavaScript(js) { (_, error) in
-            if let error = error {
-                print("\(error)")
-            }
-        }
-    }
-    
-    func loadShell() {
-        guard loadType == .shell && loadState == .setup else {
-            loadType = .shell
-            loadState = .loadingShell
-            webView.isHidden = true
-            webView.load(URLRequest(url: URL(string: shellPageURL)!))
-            return
-        }
-        loadState = .loadingIntoShell
-        guard let url = articleURL else {
-            return
-        }
-        loadArticleIntoShell(with: url)
-    }
-    
+    @IBOutlet weak var secondWebViewContainer: UIView!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     @IBOutlet var controls: [UIControl]!
+    @IBOutlet var textFields: [UITextField]!
     
-    @IBAction func shellFull(_ sender: Any) {
-        articleTitle = titleField.text!
-        loadMode = .full
-        loadShell()
+    var articleTitle: String = "United_States"
+    
+    lazy var pageViewControllerA: PageViewController = {
+        return PageViewController()
+    }()
+    lazy var pageViewControllerB: PageViewController = {
+        let b = PageViewController()
+        b.interfaceName = "pagelib"
+        return b
+    }()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        addChild(pageViewControllerA)
+        webViewContainer.addConstrainedSubview(pageViewControllerA.view)
+        pageViewControllerA.didMove(toParent: self)
+        
+        addChild(pageViewControllerB)
+        secondWebViewContainer.addConstrainedSubview(pageViewControllerB.view)
+        pageViewControllerB.didMove(toParent: self)
+        
+        pageViewControllerA.webView.scrollView.delegate = self
+        pageViewControllerB.webView.scrollView.delegate = self
+
+        URLCache.shared.diskCapacity = 4000000000 // 4 GB
+        URLCache.shared.memoryCapacity = 1000000000 // 1 GB
+        URLCache.shared.removeAllCachedResponses()
+        
+        for field in textFields {
+            field.returnKeyType = .go
+            field.delegate = self
+        }
     }
     
-    @IBAction func shellFirst(_ sender: Any) {
-        articleTitle = titleField.text!
-        loadMode = .progressive
-        loadShell()
-    }
+
     
     @IBAction func standardProgressive(_ sender: Any) {
+        titleField.endEditing(true)
+        languageField.endEditing(true)
         load(with: titleField.text!) { (_) in
             
         }
     }
     
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == actionHandler.messageHandlerName else {
-            return
-        }
-        guard let body = message.body as? [String: Any] else {
-            return
-        }
-        guard let action = body["action"] as? String else {
-            return
-        }
-        let data = body["data"] as? [String: Any]
-        switch action {
-        case "preloaded":
-            onPreload()
-        case "setup":
-            onSetup()
-        case "final_setup":
-            onPostLoad()
-        case "link_clicked":
-            guard let href = data?["href"] as? String else {
-                break
-            }
-            onLinkClicked(href: href)
-        case "shell_inital_load_complete":
-            markLoadEnd()
-            webView.isHidden = false
-        case "shell_full_load_complete":
-            loadState = .setup
-            webView.evaluateJavaScript("pagelib.c1.Page.setup(\(self.actionHandler.setupParams))")
-        case "shell_load_complete":
-            markLoadEnd()
-            webView.isHidden = false
-            loadState = .setup
-            webView.evaluateJavaScript("pagelib.c1.Page.setup(\(self.actionHandler.setupParams))")
-        default:
-            break
-        }
-    }
-    
-    func onLinkClicked(href: String) {
-        guard href.hasPrefix("./") else {
-            return
-        }
-        let title = String(href.suffix(href.count - 2))
-        articleTitle = title
-        guard let articleURL = articleURL else {
-            return
-        }
-        switch loadType {
-        case .shell:
-            loadArticleIntoShell(with: articleURL)
-        default:
-            markLoadStart()
-            webView.load(URLRequest(url: articleURL))
-        }
-    }
-    
-    
-    func onPreload() {
-
-    }
-
-    func onSetup() {
-        webView.isHidden = false
-        guard loadState != .setup else {
-            markLoadEnd()
-            return
-        }
-        guard loadType == .shell else {
-            loadState = .setup
-            markLoadEnd()
-            return
-        }
-        guard let articleURL = articleURL else {
-            return
-        }
-        loadArticleIntoShell(with: articleURL)
-    }
-    
-    func onPostLoad() {
-    }
-    
-    private var loadStart: CFAbsoluteTime?
-    private var loadEnd: CFAbsoluteTime?
-    
-    private func markLoadStart() {
-        timeLabel.text = "..."
-        loadStart = CFAbsoluteTimeGetCurrent()
-    }
-    
-    lazy var timeFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.maximumFractionDigits = 0
-        return formatter
-    }()
-    
-    private func markLoadEnd() {
-        loadEnd = CFAbsoluteTimeGetCurrent()
-        guard let start = loadStart, let end = loadEnd else {
-            return
-        }
-        guard let articleURL = articleURL else {
-            return
-        }
-        let duration: TimeInterval =  1000 * (end - start)
-        articleLoadCompletion?(.success(duration))
-        articleLoadCompletion = nil
-        let cached: String
-        if loadedURLs.contains(articleURL) {
-            cached = "cached"
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView === pageViewControllerA.webView.scrollView {
+            pageViewControllerB.webView.scrollView.contentOffset = scrollView.contentOffset
         } else {
-            cached = "uncached"
-            loadedURLs.insert(articleURL)
-        }
-        timeLabel.text = "\(timeFormatter.string(from: NSNumber(floatLiteral: duration)) ?? "") \(cached)"
-    }
-    
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if loadType == .shell && loadState == .loadingShell {
-            loadState = .loaded
-            webView.evaluateJavaScript("""
-                pagelib.c1.InteractionHandling.setInteractionHandler((action) => {
-                    window.webkit.messageHandlers.\(self.actionHandler.messageHandlerName).postMessage(action)
-                })
-            """) { (_, _) in
-                webView.evaluateJavaScript("pagelib.c1.Page.setup(\(self.actionHandler.setupParams), () => { window.webkit.messageHandlers.\(self.actionHandler.messageHandlerName).postMessage({action: 'setup'}) }) ") { (_, _) in
-                }
-            }
+            pageViewControllerA.webView.scrollView.contentOffset = scrollView.contentOffset
         }
     }
     
-    func webView(_ webView: WKWebView, contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo, completionHandler: @escaping (UIContextMenuConfiguration?) -> Void) {
-        let config = UIContextMenuConfiguration(identifier: nil, previewProvider: { () -> UIViewController? in
-            return UIStoryboard(name: "Main", bundle: nil).instantiateViewController(identifier: "vc")
-        }) { (elements) -> UIMenu? in
-            return nil
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        guard string != "\n" else {
+            standardProgressive(self)
+            return false
         }
-        completionHandler(config)
+        return true
     }
-        
 }
+
 
