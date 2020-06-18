@@ -125,12 +125,8 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
         guard let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: CharacterSet.pathComponentAllowed) else {
             return
         }
-        #if LOCAL
         let a = "http://localhost:8888/"
-        #else
-        let a = "https://mobileapps.wmflabs.org/"
-        #endif
-        let b = "https://apps2.wmflabs.org/"
+        let b = "https://mobileapps.wmflabs.org/"
         let basePath = "\(language).wikipedia.org/v1/page/mobile-html/"
         activityIndicator.startAnimating()
         let loadGroup = DispatchGroup()
@@ -162,9 +158,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegat
         return PageViewController()
     }()
     lazy var pageViewControllerB: PageViewController = {
-        let b = PageViewController()
-        b.interfaceName = "pagelib"
-        return b
+        return PageViewController()
     }()
     
     override func viewDidLoad() {
